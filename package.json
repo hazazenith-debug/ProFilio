@@ -1,0 +1,21 @@
+{
+  "name": "portfolio-genie-backend",
+  "version": "1.0.0",
+  "description": "Backend API for generating developer portfolios from GitHub profiles.",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.11.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "openai": "^4.47.1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
