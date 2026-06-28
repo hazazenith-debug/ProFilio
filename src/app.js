@@ -1,24 +1,38 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import portfolioRoutes from "./routes/portfolioRoutes.js";
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "PortfolioGenie API is running."
-  });
-});
+// Serve frontend static assets from View/dist
+const viewDistPath = path.join(__dirname, "View", "dist");
+app.use(express.static(viewDistPath));
 
 // Portfolio endpoints
 app.use("/api/portfolio", portfolioRoutes);
+
+// Fallback to index.html for all non-API paths to support SPA client-side routing
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api/")) {
+    return next();
+  }
+  res.sendFile(path.join(viewDistPath, "index.html"), (err) => {
+    if (err) {
+      next();
+    }
+  });
+});
 
 // 404 handler
 app.use((req, res, next) => {

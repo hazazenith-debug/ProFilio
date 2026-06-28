@@ -111,7 +111,6 @@ Your generated HTML must include the following structural sections:
 6. **FOOTER**:
    - Link back to their GitHub profile.
    - Include a tag "Generated with ⚡ PortfolioGenie" to attribute the platform.
-
 CRITICAL CODE CONSTRAINTS:
 - You must return ONLY the complete raw, valid HTML output.
 - DO NOT wrap the output in markdown tick blocks (such as \`\`\`html ... \`\`\`). Your response must start directly with "<!DOCTYPE html>" and end with "</html>".
