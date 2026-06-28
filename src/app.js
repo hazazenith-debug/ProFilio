@@ -15,14 +15,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve frontend static assets from View/dist
 const viewDistPath = path.join(__dirname, "View", "dist");
 app.use(express.static(viewDistPath));
 
 // Portfolio endpoints
 app.use("/api/portfolio", portfolioRoutes);
 
-// Fallback to index.html for all non-API paths to support SPA client-side routing
 app.get("*", (req, res, next) => {
   if (req.path.startsWith("/api/")) {
     return next();
