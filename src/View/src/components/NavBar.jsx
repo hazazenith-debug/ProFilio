@@ -10,7 +10,6 @@ export function NavBar() {
             <div className="nav-items">
                 <Link to="/">Home</Link>
                 <Link to="/builder">Builder</Link>
-                <a href="#">Templates</a>
             </div>
         </div>
     )

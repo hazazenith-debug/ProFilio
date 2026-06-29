@@ -8,18 +8,13 @@ export function Home() {
             <div className="hero">
                 <div className="text">
                     <p className="tag">⚡️ AI-Powered Portfolio Builder</p>
-                    <h1>Build Your Developer Portfolio with AI</h1>
+                    <h1 className="head-tag">Build Your Developer Portfolio with AI</h1>
                     <p>Create a stunning portfolio in minutes. Our AI analyzes your GitHub activity and generates optimized content that showcases your best work.</p>
                 </div>
                 <div className="buttons">
                     <button className="btn-1" onClick={() => navigate('/builder')}>Get Started Free</button>
-                    <button className="btn-2">Watch Demo</button>
                 </div>
-                <div className="pros">
-                    <p>✅ No credit card required</p>
-                    <p>✅ Setup in 5 minutes</p>
-                    <p>✅ Free forever</p>
-                </div>
+              
             </div>
 
             <div className="landing">
