@@ -1,16 +1,23 @@
-import { Link } from 'react-router-dom'
+import { Link } from "react-router-dom";
+import { Zap } from "lucide-react";
 
 export function NavBar() {
     return (
         <div className="nav">
-            <div className="logo">
-                <img className="logo" alt="" />
+
+            <Link to="/" className="logo">
+                <div className="logo-icon">
+                    <Zap size={18} strokeWidth={2.5} />
+                </div>
+
                 <span>PortfolioGenie</span>
-            </div>
+            </Link>
+
             <div className="nav-items">
                 <Link to="/">Home</Link>
                 <Link to="/builder">Builder</Link>
             </div>
+
         </div>
-    )
+    );
 }
