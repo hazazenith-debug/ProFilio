@@ -1,3 +1,8 @@
+import { Mail, MapPin } from "lucide-react";
+import { FaGithub } from "react-icons/fa";
+
+
+
 export function LivePreview({ aboutMe, selectedSkills, name, title, email, location, github }) {
   const displayName = name || 'Your Name'
   const displayTitle = title || 'Your Title'
@@ -31,21 +36,21 @@ export function LivePreview({ aboutMe, selectedSkills, name, title, email, locat
 
       {(displayEmail || displayLocation || displayGithub) && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', marginBottom: '20px' }}>
-          {displayEmail && <span style={{ fontSize: '13px', color: '#64748b' }}>📧 {displayEmail}</span>}
-          {displayLocation && <span style={{ fontSize: '13px', color: '#64748b' }}>📍 {displayLocation}</span>}
-          {displayGithub && <span style={{ fontSize: '13px', color: '#64748b' }}>🐙 {displayGithub}</span>}
+          {displayEmail && <span style={{ fontSize: '13px', color: '#64748b' }}><Mail size={14} style={{ marginRight: '5px', verticalAlign: 'middle' }} />{displayEmail}</span>}
+          {displayLocation && <span style={{ fontSize: '13px', color: '#64748b' }}><MapPin size={14} style={{ marginRight: '5px', verticalAlign: 'middle' }} />{displayLocation}</span>}
+          {displayGithub && <span style={{ fontSize: '13px', color: '#64748b' }}><FaGithub size={14} style={{ marginRight: '5px', verticalAlign: 'middle' }} />{displayGithub}</span>}
         </div>
       )}
 
       {displayAbout && (
-        <div className="projects" style={{ marginBottom: '24px' }}>
+        <div className="projects" style={{ marginBottom: '24px', transform: 'translateY(60px)' }}>
           <h3><span></span>About Me</h3>
           <p style={{ color: '#64748b', fontSize: '14px', lineHeight: '1.6' }}>{displayAbout}</p>
         </div>
       )}
 
       {selectedSkills && selectedSkills.length > 0 && (
-        <div className="projects" style={{ marginBottom: '24px' }}>
+        <div className="projects" style={{ marginBottom: '24px', transform: 'translateY(70px)' }}>
           <h3><span></span>Skills</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
             {selectedSkills.map((skill, i) => (
