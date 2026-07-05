@@ -5,6 +5,7 @@ import { NavBar } from './components/NavBar'
 import { BuildingPart } from './components/BuildingPart'
 import { LivePreview } from './components/livePreview'
 import { useState } from 'react'
+import { LogInPage } from './components/LogInPage'
 
 export default function App() {
   const [aboutMe, setAboutMe] = useState('')
@@ -41,6 +42,7 @@ export default function App() {
               github={github} />
           </div>
         } />
+        <Route path="/signin" element={<LogInPage />}/>
       </Routes>
     </Router>
   )
