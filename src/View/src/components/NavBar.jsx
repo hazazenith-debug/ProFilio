@@ -16,7 +16,7 @@ export function NavBar() {
             <div className="nav-items">
                 <Link to="/">Home</Link>
                 <Link to="/builder">Builder</Link>
-                <Link to="/signin">Sign In</Link>
+                <Link to="/signin" className="nav-signin">Sign In</Link>
             </div>
 
         </div>
