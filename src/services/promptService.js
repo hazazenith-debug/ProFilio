@@ -1,51 +1,44 @@
 import { getThemeConfig } from "../utils/themeHelper.js";
 
 // Builds the prompt sent to the AI model
-export function buildPrompt(profile, analysis, themeName) {
+export function buildPrompt(profile, analysis, themeName, userData) {
   const theme = getThemeConfig(themeName);
   
   const developerData = {
-    username: profile.login,
-    name: profile.name || profile.login,
+    username: userData.github || profile.login,
+    name: userData.name || profile.name || profile.login,
+    title: userData.title || analysis.mainStack,
+    email: userData.email || "",
+    location: userData.location || profile.location || "Remote / Global",
+    aboutMe: userData.aboutMe || profile.bio || "Active software developer showcasing custom builds and engineering solutions.",
     avatarUrl: profile.avatar_url,
-    bio: profile.bio || "Active software developer showcasing custom builds and engineering solutions.",
-    location: profile.location || "Remote / Global",
     blog: profile.blog || "",
     followers: profile.followers || 0,
     publicRepos: profile.public_repos || 0,
-    mainStack: analysis.mainStack,
     activityLevel: analysis.activityLevel,
-    scores: analysis.scores,
-    mostUsedLanguages: analysis.mostUsedLanguages,
-    detectedTechnologies: analysis.detectedTechnologies,
+    selectedSkills: userData.selectedSkills || [],
     topRepositories: analysis.topRepositories
   };
 
   return `
 You are a world-class "Senior Technical Recruiter and Portfolio Designer".
-Your task is to analyze a developer's GitHub profile data, calculated metrics, and project aggregates, and design a gorgeous, ultra-modern, fully responsive single-file HTML portfolio page that is completely ready to render.
+Your task is to analyze a developer's profile data, manual input details, and project aggregates, and design a gorgeous, ultra-modern, fully responsive single-file HTML portfolio page that is completely ready to render.
 
-Here is the developer's computed profile data:
+Here is the developer's profile data:
 =========================================
 Name: ${developerData.name}
 GitHub Username: ${developerData.username}
+Email Address: ${developerData.email}
 Avatar URL: ${developerData.avatarUrl}
 Location: ${developerData.location}
-Bio: "${developerData.bio}"
+About Me / Bio: "${developerData.aboutMe}"
 Blog/Website: "${developerData.blog}"
 Followers: ${developerData.followers}
 Public Repositories Count: ${developerData.publicRepos}
-Main Developer Profile: ${developerData.mainStack}
+Professional Title: ${developerData.title}
 GitHub Activity Level: ${developerData.activityLevel}
 
-Expertise Scores (0-100 scale):
-- Frontend: ${developerData.scores.frontend}/100
-- Backend: ${developerData.scores.backend}/100
-- Database: ${developerData.scores.database}/100
-- DevOps: ${developerData.scores.devops}/100
-
-Primary Languages: ${developerData.mostUsedLanguages.join(", ")}
-Detected Tech Stack: ${developerData.detectedTechnologies.join(", ")}
+Selected Skills & Technologies: ${developerData.selectedSkills.join(", ")}
 
 Top Repositories to Feature:
 ${developerData.topRepositories.map((repo, i) => `
@@ -84,17 +77,16 @@ Your generated HTML must include the following structural sections:
 1. **HERO SECTION**:
    - Display a professional, eye-catching title like "PortfolioGenie Profile".
    - Include a premium, modern headshot layout featuring the GitHub avatar: "${developerData.avatarUrl}".
-   - Write a recruiter-level "Professional Headline" for this developer (e.g., "Full-Stack Architect Crafting Distributed Node.js & Database Systems" or similar, highly tailored to their high scores).
+   - Write a recruiter-level "Professional Headline" for this developer (e.g., "Full-Stack Architect Crafting Distributed Node.js & Database Systems" or similar, highly tailored to their title "${developerData.title}" and selected skills: "${developerData.selectedSkills.join(", ")}").
    - Display key metadata (Location, followers count, public repositories count) in custom chips.
-   - Clean social action links (GitHub profile button, blog/website button if present).
+   - Clean social action links (GitHub profile button, email contact button, blog/website button if present).
 
 2. **ABOUT ME**:
-   - Write an engaging, recruiters-eye review summarizing their background, coding style, and obvious strengths based on their repositories. Make it sound highly encouraging, energetic, and professional!
+   - Write an engaging, recruiters-eye review summarizing their background, coding style, and obvious strengths based on their repositories and their "About Me" section: "${developerData.aboutMe}". Make it sound highly encouraging, energetic, and professional!
 
-3. **TECHNICAL EXPERTISE (SCORES)**:
-   - Display the computed skills as beautiful progress gauges or custom-styled progress bars (using the class names provided in the Theme CSS: ".card", ".progress-bar-fill", etc.).
-   - Make the gauges look extremely sleek (rounded bar ends, elegant numeric readouts, and clear labels for Frontend, Backend, Database, and DevOps).
-   - Create a clean "Tags/Chips" grid for all the detected technologies: ${developerData.detectedTechnologies.join(", ")}.
+3. **TECHNICAL EXPERTISE**:
+   - Create a clean and visually stunning "Tags/Chips" grid or progress indicators for all the selected skills: ${developerData.selectedSkills.join(", ")}.
+   - Make the presentation look extremely sleek (using the class names provided in the Theme CSS: ".card", ".progress-bar-fill", etc.).
 
 4. **FEATURED PROJECTS (TOP REPOSITORIES)**:
    - Display the 4 repositories in a balanced 2x2 grid (or single column on mobile).
@@ -105,12 +97,13 @@ Your generated HTML must include the following structural sections:
 5. **RECRUITER REVIEW & INSIGHTS**:
    - Create a designated card for "Recruiter Insights" divided into:
      *   **Core Strengths**: 3 bulleted insights on what makes this developer stand out based on their stack.
-     *   **Suggested Growth Paths**: 2 constructive, friendly tips on technologies they should explore next to level up their scores.
+     *   **Suggested Growth Paths**: 2 constructive, friendly tips on technologies they should explore next to level up their skills.
      *   **Suggested Career Path**: A short recruiter recommendation paragraph (e.g., "Excellent candidate for scaling enterprise cloud APIs").
 
 6. **FOOTER**:
    - Link back to their GitHub profile.
    - Include a tag "Generated with ⚡ PortfolioGenie" to attribute the platform.
+
 CRITICAL CODE CONSTRAINTS:
 - You must return ONLY the complete raw, valid HTML output.
 - DO NOT wrap the output in markdown tick blocks (such as \`\`\`html ... \`\`\`). Your response must start directly with "<!DOCTYPE html>" and end with "</html>".

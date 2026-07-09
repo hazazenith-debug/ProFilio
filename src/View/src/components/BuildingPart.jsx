@@ -8,6 +8,10 @@ import { useState } from 'react'
 export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedSkills, name, setName, title, setTitle, email, setEmail, location, setLocation, github, setGithub }) {
   const [step, setStep] = useState(0)
   const [showErrors, setShowErrors] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [generatedHtml, setGeneratedHtml] = useState("")
+  const [selectedTheme, setSelectedTheme] = useState("dark")
 
   const isEmailValid = email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isGithubValid = github && /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(github);
@@ -17,6 +21,7 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
   const isSkillsValid = selectedSkills && selectedSkills.length >= 2;
 
   const goToStep = (targetStep) => {
+    if (isLoading) return;
     if (targetStep > step) {
       if (step === 0 && !isPersonalInfoValid) {
         setShowErrors(true);
@@ -35,55 +40,154 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
         return;
       }
     }
+    setError(null);
     setShowErrors(false);
     setStep(targetStep);
+  };
+
+  const handleGenerate = async (themeName = selectedTheme) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/portfolio/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          githubUsername: github,
+          theme: themeName,
+          name,
+          title,
+          email,
+          location,
+          aboutMe,
+          selectedSkills
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Failed to generate portfolio.");
+      }
+
+      setGeneratedHtml(data.portfolioHtml);
+      setStep(4);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "An error occurred during portfolio generation.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!generatedHtml) return;
+    const blob = new Blob([generatedHtml], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "portfolio.html";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
     <div className="building-part">
       <BuildingHeader />
 
-      <div className="steps-container">
-        <div className="steps">
-          <div className={`step ${step === 0 ? 'active' : step > 0 ? 'completed' : ''}`} onClick={() => goToStep(0)}>
-            {step > 0 ? '✓' : '1'}
-          </div>
-          <div className={`line ${step > 0 ? 'completed' : ''}`}></div>
+      {step < 4 && (
+        <div className="steps-container">
+          <div className="steps">
+            <div className={`step ${step === 0 ? 'active' : step > 0 ? 'completed' : ''}`} onClick={() => goToStep(0)}>
+              {step > 0 ? '✓' : '1'}
+            </div>
+            <div className={`line ${step > 0 ? 'completed' : ''}`}></div>
 
-          <div className={`step ${step === 1 ? 'active' : step > 1 ? 'completed' : ''}`} onClick={() => goToStep(1)}>
-            {step > 1 ? '✓' : '2'}
-          </div>
-          <div className={`line ${step > 1 ? 'completed' : ''}`}></div>
+            <div className={`step ${step === 1 ? 'active' : step > 1 ? 'completed' : ''}`} onClick={() => goToStep(1)}>
+              {step > 1 ? '✓' : '2'}
+            </div>
+            <div className={`line ${step > 1 ? 'completed' : ''}`}></div>
 
-          <div className={`step ${step === 2 ? 'active' : step > 2 ? 'completed' : ''}`} onClick={() => goToStep(2)}>
-            {step > 2 ? '✓' : '3'}
-          </div>
-          <div className={`line ${step > 2 ? 'completed' : ''}`}></div>
+            <div className={`step ${step === 2 ? 'active' : step > 2 ? 'completed' : ''}`} onClick={() => goToStep(2)}>
+              {step > 2 ? '✓' : '3'}
+            </div>
+            <div className={`line ${step > 2 ? 'completed' : ''}`}></div>
 
-          <div className={`step ${step === 3 ? 'active' : ''}`} onClick={() => goToStep(3)}>
-            {step > 3 ? '✓' : '4'}
+            <div className={`step ${step === 3 ? 'active' : ''}`} onClick={() => goToStep(3)}>
+              {step > 3 ? '✓' : '4'}
+            </div>
+          </div>
+
+          <div className="labels">
+            <span className={step === 0 ? 'active' : ''}>Personal Info</span>
+            <span className={step === 1 ? 'active' : ''}>Skills</span>
+            <span className={step === 2 ? 'active' : ''}>About Me</span>
+            <span className={step === 3 ? 'active' : ''}>Preview</span>
           </div>
         </div>
-
-        <div className="labels">
-          <span className={step === 0 ? 'active' : ''}>Personal Info</span>
-          <span className={step === 1 ? 'active' : ''}>Skills</span>
-          <span className={step === 2 ? 'active' : ''}>About Me</span>
-          <span className={step === 3 ? 'active' : ''}>Preview</span>
-        </div>
-      </div>
+      )}
 
       <div className="form-content">
-        {step === 0 && <PersonalInfo
+        {isLoading && step < 4 && (
+          <div className="loading-overlay" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 0', textAlign: 'center' }}>
+            <div className="spinner" style={{
+              width: '50px',
+              height: '50px',
+              border: '5px solid #e2e8f0',
+              borderTop: '5px solid #2563eb',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              marginBottom: '20px'
+            }}></div>
+            <style>{`
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `}</style>
+            <h3>Generating Portfolio...</h3>
+            <p style={{ color: '#64748b', fontSize: '14px', marginTop: '8px', maxWidth: '380px' }}>
+              We are parsing your GitHub repository, analyzing code structure, and generating a custom professional portfolio page. This might take up to 20-30 seconds.
+            </p>
+          </div>
+        )}
+
+        {error && !isLoading && step < 4 && (
+          <div className="error-box" style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '20px', color: '#b91c1c', margin: '20px 0', fontSize: '14px', textAlign: 'center' }}>
+            <strong>Error Generating Portfolio:</strong> 
+            <p style={{ marginTop: '8px', color: '#7f1d1d' }}>{error}</p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '16px' }}>
+              <button 
+                onClick={() => handleGenerate(selectedTheme)} 
+                className="btn-next" 
+                style={{ background: '#dc2626', fontSize: '13px', padding: '10px 20px', boxShadow: 'none' }}
+              >
+                🔄 Try Again
+              </button>
+              <button 
+                onClick={() => { setError(null); setStep(3); }} 
+                className="btn-back" 
+                style={{ border: '1px solid #fca5a5', color: '#b91c1c', opacity: 1, padding: '10px 20px' }}
+              >
+                ✏️ Edit Info
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!isLoading && !error && step === 0 && <PersonalInfo
           name={name} setName={setName}
           title={title} setTitle={setTitle}
           email={email} setEmail={setEmail}
           location={location} setLocation={setLocation}
           github={github} setGithub={setGithub}
           showErrors={showErrors} />}
-        {step === 1 && <Skills selectedSkills={selectedSkills} setSelectedSkills={setSelectedSkills} />}
-        {step === 2 && <AboutMe aboutMe={aboutMe} setAboutMe={setAboutMe} />}
-        {step === 3 && <Preview
+        {!isLoading && !error && step === 1 && <Skills selectedSkills={selectedSkills} setSelectedSkills={setSelectedSkills} />}
+        {!isLoading && !error && step === 2 && <AboutMe aboutMe={aboutMe} setAboutMe={setAboutMe} />}
+        {!isLoading && !error && step === 3 && <Preview
           aboutMe={aboutMe}
           selectedSkills={selectedSkills}
           name={name}
@@ -91,41 +195,134 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
           email={email}
           location={location}
           github={github}
-          setStep={goToStep} />}
+          setStep={goToStep}
+          selectedTheme={selectedTheme}
+          setSelectedTheme={setSelectedTheme} />}
+
+        {step === 4 && (
+          <div className="full-screen-preview">
+            <div className="preview-topbar">
+              <div className="preview-logo">
+                ⚡ ProFilio <span>| Live Preview</span>
+              </div>
+              
+              <div className="preview-controls">
+                <div className="theme-selector-wrapper">
+                  <label htmlFor="theme-select">Theme:</label>
+                  <select 
+                    id="theme-select"
+                    className="theme-dropdown"
+                    value={selectedTheme}
+                    onChange={(e) => {
+                      const newTheme = e.target.value;
+                      setSelectedTheme(newTheme);
+                      handleGenerate(newTheme);
+                    }}
+                    disabled={isLoading}
+                  >
+                    <option value="dark">Dark Slate & Neon Accent</option>
+                    <option value="minimal">Scandinavian Monochromatic</option>
+                    <option value="cyberpunk">Neon Cybernetic Tech</option>
+                    <option value="glassmorphism">Frosted Glass Fluidity</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="preview-actions">
+                <button 
+                  onClick={handleDownload} 
+                  className="btn-preview-download"
+                  disabled={isLoading}
+                >
+                  📥 Download HTML
+                </button>
+                <button 
+                  onClick={() => { setError(null); setStep(3); }} 
+                  className="btn-preview-back"
+                  disabled={isLoading}
+                >
+                  ✏️ Back to Editor
+                </button>
+              </div>
+            </div>
+
+            <div className="preview-iframe-wrapper">
+              {isLoading && (
+                <div className="preview-loading-overlay">
+                  <div className="spinner" style={{
+                    width: '40px',
+                    height: '40px',
+                    border: '4px solid rgba(255,255,255,0.1)',
+                    borderTop: '4px solid #38bdf8',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                    marginBottom: '16px'
+                  }}></div>
+                  <h4 style={{ fontWeight: 600 }}>Regenerating Theme...</h4>
+                  <p style={{ color: '#94a3b8', fontSize: '13px', marginTop: '4px' }}>Applying theme styling directives to your portfolio</p>
+                </div>
+              )}
+              
+              {error ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '40px', background: '#0f172a', color: '#fca5a5' }}>
+                  <strong>Error Generating Theme:</strong>
+                  <p style={{ marginTop: '8px', color: '#94a3b8', fontSize: '14px', maxWidth: '400px', textAlign: 'center' }}>{error}</p>
+                  <button 
+                    onClick={() => handleGenerate(selectedTheme)}
+                    className="btn-next" 
+                    style={{ marginTop: '16px', background: '#dc2626' }}
+                  >
+                    🔄 Try Again
+                  </button>
+                </div>
+              ) : (
+                <iframe
+                  srcDoc={generatedHtml}
+                  title="Generated Portfolio Preview"
+                  className="preview-iframe"
+                />
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="builder-nav-buttons">
-        <button
-          className="btn-back"
-          onClick={() => step > 0 && goToStep(step - 1)}
-          disabled={step === 0}
-          style={{ opacity: step === 0 ? 0.5 : 1, cursor: step === 0 ? 'default' : 'pointer' }}
-        >
-          &lt; Back
-        </button>
-        <button
-          className="btn-next"
-          onClick={() => {
-            if (step === 0 && !isPersonalInfoValid) {
-              setShowErrors(true);
-              return;
-            }
-            if (step === 1 && !isSkillsValid) {
-              setShowErrors(true);
-              return;
-            }
-            if (step < 3) {
-              setShowErrors(false);
-              setStep(step + 1);
-            }
-          }}
-          style={{ 
-            cursor: 'pointer'
-          }}
-        >
-          {step === 3 ? 'Generate Portfolio' : step === 2 ? 'Review & Preview' : 'Next Step >'}
-        </button>
-      </div>
+      {!isLoading && step < 4 && (
+        <div className="builder-nav-buttons">
+          <button
+            className="btn-back"
+            onClick={() => step > 0 && goToStep(step - 1)}
+            disabled={step === 0}
+            style={{ opacity: step === 0 ? 0.5 : 1, cursor: step === 0 ? 'default' : 'pointer' }}
+          >
+            &lt; Back
+          </button>
+          <button
+            className="btn-next"
+            onClick={() => {
+              if (step === 0 && !isPersonalInfoValid) {
+                setShowErrors(true);
+                return;
+              }
+              if (step === 1 && !isSkillsValid) {
+                setShowErrors(true);
+                return;
+              }
+              if (step < 3) {
+                setShowErrors(false);
+                setStep(step + 1);
+              } else if (step === 3) {
+                handleGenerate();
+              }
+            }}
+            style={{ 
+              cursor: 'pointer'
+            }}
+          >
+            {step === 3 ? 'Generate Portfolio' : step === 2 ? 'Review & Preview' : 'Next Step >'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

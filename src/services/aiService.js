@@ -1,5 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import OpenAI from "openai";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -23,63 +21,53 @@ function cleanHtmlOutput(text) {
   return cleanText.trim();
 }
 
-async function generateWithGemini(prompt) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is missing in .env file.");
-  }
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
-
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  const rawText = response.text();
-  
-  return cleanHtmlOutput(rawText);
-}
-
-async function generateWithOpenAI(prompt) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is missing in .env file.");
-  }
-
-  const openai = new OpenAI({ apiKey });
-
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      {
-        role: "system",
-        content: "You are a professional web designer that writes beautiful, single-file, responsive HTML templates containing both structure and styled blocks."
-      },
-      {
-        role: "user",
-        content: prompt
-      }
-    ],
-    temperature: 0.7,
-  });
-
-  const rawText = completion.choices[0].message.content;
-  return cleanHtmlOutput(rawText);
-}
-
-// Routes to the active AI provider (gemini / openai)
+// Direct fetch connection to the configured free API endpoint
 export async function generatePortfolioHtml(prompt) {
-  const provider = (process.env.AI_PROVIDER || "gemini").toLowerCase().trim();
+  const apiKey = process.env.FREE_API_KEY || "dummy-key";
+  const apiEndpoint = process.env.FREE_API_ENDPOINT || "https://api.freemodel.dev/v1/chat/completions";
+  const model = process.env.FREE_API_MODEL || "openai-t0";
+
+  console.log(`\n[AI Generator] Connecting to API endpoint: ${apiEndpoint}`);
+  console.log(`[AI Generator] Utilizing model: ${model}`);
 
   try {
-    if (provider === "gemini") {
-      return await generateWithGemini(prompt);
-    } else if (provider === "openai") {
-      return await generateWithOpenAI(prompt);
-    } else {
-      throw new Error(`Unsupported AI_PROVIDER "${provider}". Use 'gemini' or 'openai'.`);
+    const response = await fetch(apiEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional web designer that writes beautiful, single-file, responsive HTML templates containing both structure and styled blocks."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API Error (${response.status}): ${errorText}`);
     }
+
+    const data = await response.json();
+    const rawText = data.choices?.[0]?.message?.content;
+    
+    if (!rawText) {
+      throw new Error("No response content returned from the API.");
+    }
+
+    return cleanHtmlOutput(rawText);
   } catch (error) {
-    console.error("AI generation error:", error.message);
+    console.error("[AI Generator] Error:", error.message);
     throw new Error(`AI Generation Failed: ${error.message}`);
   }
 }

@@ -8,6 +8,12 @@ import { generatePortfolioHtml } from "../services/aiService.js";
 export async function generatePortfolio(req, res) {
   const githubUsername = req.body.githubUsername || req.query.githubUsername;
   const theme = req.body.theme || req.query.theme;
+  const name = req.body.name || req.query.name;
+  const title = req.body.title || req.query.title;
+  const email = req.body.email || req.query.email;
+  const location = req.body.location || req.query.location;
+  const aboutMe = req.body.aboutMe || req.query.aboutMe;
+  const selectedSkills = req.body.selectedSkills || req.query.selectedSkills;
 
   if (!githubUsername || typeof githubUsername !== "string" || githubUsername.trim() === "") {
     return res.status(400).json({
@@ -38,7 +44,18 @@ export async function generatePortfolio(req, res) {
 
     const statistics = await getStatistics(trimmedUsername, repos);
     const analysis = analyzeDeveloperProfile(repos, statistics.languageStats);
-    const prompt = buildPrompt(profile, analysis, selectedTheme);
+
+    const userData = {
+      github: trimmedUsername,
+      name: name || profile.name || profile.login,
+      title: title || analysis.mainStack,
+      email: email || "",
+      location: location || profile.location || "",
+      aboutMe: aboutMe || profile.bio || "",
+      selectedSkills: Array.isArray(selectedSkills) ? selectedSkills : (selectedSkills ? selectedSkills.split(",") : [])
+    };
+
+    const prompt = buildPrompt(profile, analysis, selectedTheme, userData);
     const portfolioHtml = await generatePortfolioHtml(prompt);
 
     // Save HTML to file for preview
