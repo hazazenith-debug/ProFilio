@@ -31,7 +31,7 @@ export function LivePreview({ aboutMe, selectedSkills, name, title, email, locat
         <span className="status"></span>
       </div>
 
-      <h1 style={{ color: '#232e40' }}>{displayName}</h1>
+      <h1 style={{ color: '#232e40' }} className="displayName">{displayName}</h1>
       <p className="job">{displayTitle}</p>
 
       {(displayEmail || displayLocation || displayGithub) && (

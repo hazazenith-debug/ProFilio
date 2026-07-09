@@ -660,7 +660,8 @@ body {
 /* Layout */
 .container {
     display: flex;
-    height: 100vh;
+    min-height: 100vh;
+    height: auto;
 }
 
 /* LEFT */
@@ -874,4 +875,17 @@ body {
     color: #2563eb;
     text-decoration: none;
     font-size: 14px;
+}
+.live-preview{
+    overflow-x: hidden;
+}
+
+.live-preview h1,
+.live-preview h2,
+.live-preview h3,
+.live-preview p,
+.live-preview span{
+    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
 }
