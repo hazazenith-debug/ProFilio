@@ -3,7 +3,7 @@ import { getThemeConfig } from "../utils/themeHelper.js";
 // Builds the prompt sent to the AI model
 export function buildPrompt(profile, analysis, themeName, userData) {
   const theme = getThemeConfig(themeName);
-  
+
   const developerData = {
     username: userData.github || profile.login,
     name: userData.name || profile.name || profile.login,
@@ -111,5 +111,11 @@ CRITICAL CODE CONSTRAINTS:
 - Absolutely NO external JavaScript scripts or libraries (you may use FontAwesome icons via cdn if you want visual social icons, e.g., "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css").
 - Make sure the HTML is fully responsive (works on Mobile, Tablet, and Desktop using proper flex and grid viewport handling, like max-width wrappers, meta viewport tags, and box-sizing reset).
 - Make the portfolio look like a premium, state-of-the-art developer platform.
+- SPEED & CONCISENESS DIRECTIVES:
+  * Write clean, highly compact, and optimized CSS/HTML to reduce response length.
+  * Absolutely DO NOT include any comments (like <!-- html comments --> or /* CSS comments */).
+  * Keep text explanations, insights, and bios brief and high-impact.
+  * Minimize nested layout elements to speed up generation time and reduce output token count.
 `;
 }
+

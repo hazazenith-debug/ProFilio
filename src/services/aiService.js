@@ -25,7 +25,7 @@ function cleanHtmlOutput(text) {
 export async function generatePortfolioHtml(prompt) {
   const apiKey = process.env.FREE_API_KEY || "dummy-key";
   const apiEndpoint = process.env.FREE_API_ENDPOINT || "https://api.freemodel.dev/v1/chat/completions";
-  const model = process.env.FREE_API_MODEL || "openai-t0";
+  const model = process.env.FREE_API_MODEL || "openai-t1-sg";
 
   console.log(`\n[AI Generator] Connecting to API endpoint: ${apiEndpoint}`);
   console.log(`[AI Generator] Utilizing model: ${model}`);
