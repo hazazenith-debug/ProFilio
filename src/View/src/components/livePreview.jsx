@@ -31,21 +31,21 @@ export function LivePreview({ aboutMe, selectedSkills, name, title, email, locat
         <span className="status"></span>
       </div>
 
-      <h1 style={{ color: '#232e40' }} className="displayName">{displayName}</h1>
-      <p className="job">{displayTitle}</p>
+      <h1 style={{ color: '#232e40', wordBreak: 'break-word' }} className="displayName">{displayName}</h1>
+      <p className="job" style={{ wordBreak: 'break-word' }}>{displayTitle}</p>
 
       {(displayEmail || displayLocation || displayGithub) && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', marginBottom: '20px' }}>
-          {displayEmail && <span style={{ fontSize: '13px', color: '#64748b' }}><Mail size={14} style={{ marginRight: '5px', verticalAlign: 'middle' }} />{displayEmail}</span>}
-          {displayLocation && <span style={{ fontSize: '13px', color: '#64748b' }}><MapPin size={14} style={{ marginRight: '5px', verticalAlign: 'middle' }} />{displayLocation}</span>}
-          {displayGithub && <span style={{ fontSize: '13px', color: '#64748b' }}><FaGithub size={14} style={{ marginRight: '5px', verticalAlign: 'middle' }} />{displayGithub}</span>}
+          {displayEmail && <span style={{ fontSize: '13px', color: '#64748b', wordBreak: 'break-all' }}><Mail size={14} style={{ marginRight: '5px', verticalAlign: 'middle' }} />{displayEmail}</span>}
+          {displayLocation && <span style={{ fontSize: '13px', color: '#64748b', wordBreak: 'break-word' }}><MapPin size={14} style={{ marginRight: '5px', verticalAlign: 'middle' }} />{displayLocation}</span>}
+          {displayGithub && <span style={{ fontSize: '13px', color: '#64748b', wordBreak: 'break-all' }}><FaGithub size={14} style={{ marginRight: '5px', verticalAlign: 'middle' }} />{displayGithub}</span>}
         </div>
       )}
 
       {displayAbout && (
         <div className="projects" style={{ marginBottom: '24px', transform: 'translateY(60px)' }}>
           <h3><span></span>About Me</h3>
-          <p style={{ color: '#64748b', fontSize: '14px', lineHeight: '1.6' }}>{displayAbout}</p>
+          <p style={{ color: '#64748b', fontSize: '14px', lineHeight: '1.6', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{displayAbout}</p>
         </div>
       )}
 
