@@ -3,6 +3,7 @@ import { PersonalInfo } from './PersonalInfo'
 import { Skills } from './Skills'
 import { AboutMe } from './AboutMe'
 import { Preview } from './Preview'
+import { ThemeSelection } from './ThemeSelection'
 import { useState } from 'react'
 
 export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedSkills, name, setName, title, setTitle, email, setEmail, location, setLocation, github, setGithub }) {
@@ -72,7 +73,7 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
       }
 
       setGeneratedHtml(data.portfolioHtml);
-      setStep(4);
+      setStep(5);
     } catch (err) {
       console.error(err);
       setError(err.message || "An error occurred during portfolio generation.");
@@ -98,7 +99,7 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
     <div className="building-part">
       <BuildingHeader />
 
-      {step < 4 && (
+      {step < 5 && (
         <div className="steps-container">
           <div className="steps">
             <div className={`step ${step === 0 ? 'active' : step > 0 ? 'completed' : ''}`} onClick={() => goToStep(0)}>
@@ -116,8 +117,13 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
             </div>
             <div className={`line ${step > 2 ? 'completed' : ''}`}></div>
 
-            <div className={`step ${step === 3 ? 'active' : ''}`} onClick={() => goToStep(3)}>
+            <div className={`step ${step === 3 ? 'active' : step > 3 ? 'completed' : ''}`} onClick={() => goToStep(3)}>
               {step > 3 ? '✓' : '4'}
+            </div>
+            <div className={`line ${step > 3 ? 'completed' : ''}`}></div>
+
+            <div className={`step ${step === 4 ? 'active' : ''}`} onClick={() => goToStep(4)}>
+              {step > 4 ? '✓' : '5'}
             </div>
           </div>
 
@@ -125,13 +131,14 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
             <span className={step === 0 ? 'active' : ''}>Personal Info</span>
             <span className={step === 1 ? 'active' : ''}>Skills</span>
             <span className={step === 2 ? 'active' : ''}>About Me</span>
-            <span className={step === 3 ? 'active' : ''}>Preview</span>
+            <span className={step === 3 ? 'active' : ''}>Theme</span>
+            <span className={step === 4 ? 'active' : ''}>Review</span>
           </div>
         </div>
       )}
 
       <div className="form-content">
-        {isLoading && step < 4 && (
+        {isLoading && step < 5 && (
           <div className="loading-overlay" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 0', textAlign: 'center' }}>
             <div className="spinner" style={{
               width: '50px',
@@ -155,7 +162,7 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
           </div>
         )}
 
-        {error && !isLoading && step < 4 && (
+        {error && !isLoading && step < 5 && (
           <div className="error-box" style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '20px', color: '#b91c1c', margin: '20px 0', fontSize: '14px', textAlign: 'center' }}>
             <strong>Error Generating Portfolio:</strong> 
             <p style={{ marginTop: '8px', color: '#7f1d1d' }}>{error}</p>
@@ -168,7 +175,7 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
                 🔄 Try Again
               </button>
               <button 
-                onClick={() => { setError(null); setStep(3); }} 
+                onClick={() => { setError(null); setStep(4); }} 
                 className="btn-back" 
                 style={{ border: '1px solid #fca5a5', color: '#b91c1c', opacity: 1, padding: '10px 20px' }}
               >
@@ -187,7 +194,8 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
           showErrors={showErrors} />}
         {!isLoading && !error && step === 1 && <Skills selectedSkills={selectedSkills} setSelectedSkills={setSelectedSkills} />}
         {!isLoading && !error && step === 2 && <AboutMe aboutMe={aboutMe} setAboutMe={setAboutMe} />}
-        {!isLoading && !error && step === 3 && <Preview
+        {!isLoading && !error && step === 3 && <ThemeSelection selectedTheme={selectedTheme} setSelectedTheme={setSelectedTheme} />}
+        {!isLoading && !error && step === 4 && <Preview
           aboutMe={aboutMe}
           selectedSkills={selectedSkills}
           name={name}
@@ -195,11 +203,9 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
           email={email}
           location={location}
           github={github}
-          setStep={goToStep}
-          selectedTheme={selectedTheme}
-          setSelectedTheme={setSelectedTheme} />}
+          setStep={goToStep} />}
 
-        {step === 4 && (
+        {step === 5 && (
           <div className="full-screen-preview">
             <div className="preview-topbar">
               <div className="preview-logo">
@@ -237,7 +243,7 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
                   📥 Download HTML
                 </button>
                 <button 
-                  onClick={() => { setError(null); setStep(3); }} 
+                  onClick={() => { setError(null); setStep(4); }} 
                   className="btn-preview-back"
                   disabled={isLoading}
                 >
@@ -287,7 +293,7 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
         )}
       </div>
 
-      {!isLoading && step < 4 && (
+      {!isLoading && step < 5 && (
         <div className="builder-nav-buttons">
           <button
             className="btn-back"
@@ -308,10 +314,10 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
                 setShowErrors(true);
                 return;
               }
-              if (step < 3) {
+              if (step < 4) {
                 setShowErrors(false);
                 setStep(step + 1);
-              } else if (step === 3) {
+              } else if (step === 4) {
                 handleGenerate();
               }
             }}
@@ -319,7 +325,7 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
               cursor: 'pointer'
             }}
           >
-            {step === 3 ? 'Generate Portfolio' : step === 2 ? 'Review & Preview' : 'Next Step >'}
+            {step === 4 ? 'Generate Portfolio' : step === 3 ? 'Review Details >' : 'Next Step >'}
           </button>
         </div>
       )}
