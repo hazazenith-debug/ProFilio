@@ -5,6 +5,9 @@ import { AboutMe } from './AboutMe'
 import { Preview } from './Preview'
 import { ThemeSelection } from './ThemeSelection'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+
 
 export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedSkills, name, setName, title, setTitle, email, setEmail, location, setLocation, github, setGithub }) {
   const [step, setStep] = useState(0)
@@ -13,6 +16,56 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
   const [error, setError] = useState(null)
   const [generatedHtml, setGeneratedHtml] = useState("")
   const [selectedTheme, setSelectedTheme] = useState("dark")
+
+  const { user } = useAuth();
+  const [saveStatus, setSaveStatus] = useState("idle"); // 'idle' | 'saving' | 'saved' | 'error'
+  const [saveError, setSaveError] = useState("");
+
+  const handleSave = async () => {
+    if (!user) {
+      setError("Please sign in or create an account to save your portfolio to your profile.");
+      return;
+    }
+    if (!generatedHtml) return;
+
+    setSaveStatus("saving");
+    setSaveError("");
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/portfolio/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          githubUsername: github,
+          theme: selectedTheme,
+          name,
+          title,
+          email,
+          location,
+          aboutMe,
+          selectedSkills,
+          portfolioHtml: generatedHtml
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Failed to save portfolio.");
+      }
+
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    } catch (err) {
+      console.error(err);
+      setSaveStatus("error");
+      setSaveError(err.message || "Could not save portfolio to database.");
+    }
+  };
+
 
   const isEmailValid = email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isGithubValid = github && /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(github);
@@ -234,7 +287,56 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
                 </div>
               </div>
 
-              <div className="preview-actions">
+              <div className="preview-actions" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                {saveError && (
+                  <span style={{ color: "#ef4444", fontSize: "12px", background: "#fef2f2", padding: "6px 12px", borderRadius: "8px", border: "1px solid #fee2e2" }}>
+                    ⚠️ {saveError}
+                  </span>
+                )}
+                {user ? (
+                  <button 
+                    onClick={handleSave} 
+                    className="btn-preview-save"
+                    style={{
+                      background: saveStatus === "saved" ? "#10b981" : saveStatus === "saving" ? "#f59e0b" : "linear-gradient(135deg, #4f7cff, #8b3dff)",
+                      color: "white",
+                      border: "none",
+                      padding: "8px 16px",
+                      borderRadius: "10px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      transition: "all 0.3s ease",
+                      boxShadow: saveStatus === "saved" ? "0 4px 12px rgba(16, 185, 129, 0.2)" : "0 4px 12px rgba(139, 61, 255, 0.25)"
+                    }}
+                    disabled={isLoading || saveStatus === "saving"}
+                  >
+                    {saveStatus === "saving" ? "⏳ Saving..." : saveStatus === "saved" ? "✅ Saved!" : "☁️ Save to Profile"}
+                  </button>
+                ) : (
+                  <Link 
+                    to="/signin" 
+                    className="btn-preview-save"
+                    style={{
+                      background: "rgba(255, 255, 255, 0.15)",
+                      color: "white",
+                      textDecoration: "none",
+                      padding: "8px 16px",
+                      borderRadius: "10px",
+                      fontWeight: 600,
+                      fontSize: "14px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      transition: "background 0.3s ease"
+                    }}
+                  >
+                    🔒 Sign In to Save
+                  </Link>
+                )}
                 <button 
                   onClick={handleDownload} 
                   className="btn-preview-download"

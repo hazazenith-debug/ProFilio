@@ -1,7 +1,11 @@
 import app from "./app.js";
 import dotenv from "dotenv";
+import { connectDB } from "./utils/db.js";
 
 dotenv.config();
+
+// Connect to NoSQL database
+connectDB();
 
 const PORT = process.env.PORT || 5000;
 

@@ -1093,3 +1093,10 @@ body {
     color: #f8fafc;
     z-index: 10;
 }
+
+.btn-nav-signout:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+

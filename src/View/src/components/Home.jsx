@@ -3,11 +3,19 @@ import { FiCode, FiEye, FiZap } from "react-icons/fi";
 import { HiOutlineLightBulb } from "react-icons/hi";
 import { Lightbulb, Code2, Eye } from "lucide-react";
 import { Zap } from "lucide-react";
-
-
+import { useAuth } from '../context/AuthContext';
 
 export function Home() {
     const navigate = useNavigate();
+    const { user } = useAuth();
+
+    const handleGetStarted = () => {
+        if (user) {
+            navigate('/builder');
+        } else {
+            navigate('/signin');
+        }
+    };
 
     return (
         <div>
@@ -23,7 +31,7 @@ export function Home() {
                     <p style={{fontWeight:'450', }}>Create a stunning portfolio in minutes. Our AI analyzes your GitHub activity and generates optimized content that showcases your best work.</p>
                 </div>
                 <div className="buttons">
-                    <button className="btn-1" onClick={() => navigate('/builder')}>Get Started Free</button>
+                    <button className="btn-1" onClick={handleGetStarted}>Get Started Free</button>
                 </div>
 
             </div>
