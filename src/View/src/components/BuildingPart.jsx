@@ -17,6 +17,7 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
   const [generatedHtml, setGeneratedHtml] = useState("")
   const [selectedTheme, setSelectedTheme] = useState("dark")
   const [githubData, setGithubData] = useState(null)
+  const [aiData, setAiData] = useState(null)
 
   const { user } = useAuth();
   const [saveStatus, setSaveStatus] = useState("idle"); // 'idle' | 'saving' | 'saved' | 'error'
@@ -50,7 +51,8 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
           aboutMe,
           selectedSkills,
           portfolioHtml: generatedHtml,
-          githubData: githubData
+          githubData: githubData,
+          aiData: aiData
         })
       });
 
@@ -130,6 +132,9 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
       setGeneratedHtml(data.portfolioHtml);
       if (data.githubData) {
         setGithubData(data.githubData);
+      }
+      if (data.aiData) {
+        setAiData(data.aiData);
       }
       setStep(5);
     } catch (err) {

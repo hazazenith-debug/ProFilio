@@ -51,6 +51,52 @@ const PortfolioSchema = new mongoose.Schema(
       type: Map,
       of: String,
       default: () => new Map()
+    },
+    // Cached GitHub data fields
+    avatarUrl: {
+      type: String,
+      default: ""
+    },
+    blog: {
+      type: String,
+      default: ""
+    },
+    followers: {
+      type: Number,
+      default: 0
+    },
+    publicRepos: {
+      type: Number,
+      default: 0
+    },
+    activityLevel: {
+      type: String,
+      default: "Active"
+    },
+    topRepositories: {
+      type: [mongoose.Schema.Types.Mixed],
+      default: []
+    },
+    // AI Generated Text Fields
+    aiHeadline: {
+      type: String,
+      default: ""
+    },
+    aiAboutMe: {
+      type: String,
+      default: ""
+    },
+    aiCoreStrengths: {
+      type: [String],
+      default: []
+    },
+    aiGrowthPaths: {
+      type: [String],
+      default: []
+    },
+    aiCareerPath: {
+      type: String,
+      default: ""
     }
   },
   {

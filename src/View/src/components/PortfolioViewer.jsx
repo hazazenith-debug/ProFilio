@@ -63,7 +63,20 @@ export function PortfolioViewer() {
             email: portfolio.email,
             location: portfolio.location,
             aboutMe: portfolio.aboutMe,
-            selectedSkills: portfolio.selectedSkills
+            selectedSkills: portfolio.selectedSkills,
+            aiHeadline: portfolio.aiHeadline,
+            aiAboutMe: portfolio.aiAboutMe,
+            aiCoreStrengths: portfolio.aiCoreStrengths,
+            aiGrowthPaths: portfolio.aiGrowthPaths,
+            aiCareerPath: portfolio.aiCareerPath,
+            githubData: {
+              avatarUrl: portfolio.avatarUrl,
+              blog: portfolio.blog,
+              followers: portfolio.followers,
+              publicRepos: portfolio.publicRepos,
+              activityLevel: portfolio.activityLevel,
+              topRepositories: portfolio.topRepositories
+            }
           })
         });
 
@@ -101,7 +114,22 @@ export function PortfolioViewer() {
             location: portfolio.location,
             aboutMe: portfolio.aboutMe,
             selectedSkills: portfolio.selectedSkills,
-            portfolioHtml: targetHtml
+            portfolioHtml: targetHtml,
+            githubData: {
+              avatarUrl: portfolio.avatarUrl,
+              blog: portfolio.blog,
+              followers: portfolio.followers,
+              publicRepos: portfolio.publicRepos,
+              activityLevel: portfolio.activityLevel,
+              topRepositories: portfolio.topRepositories
+            },
+            aiData: {
+              aiHeadline: portfolio.aiHeadline,
+              aiAboutMe: portfolio.aiAboutMe,
+              aiCoreStrengths: portfolio.aiCoreStrengths,
+              aiGrowthPaths: portfolio.aiGrowthPaths,
+              aiCareerPath: portfolio.aiCareerPath
+            }
           })
         });
 

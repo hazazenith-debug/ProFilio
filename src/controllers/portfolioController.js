@@ -1,8 +1,8 @@
-import fs from "fs";
 import { getUser, getRepositories, getStatistics } from "../services/githubService.js";
 import { analyzeDeveloperProfile } from "../services/analysisService.js";
-import { buildPrompt, buildThemeSwitchPrompt } from "../services/promptService.js";
-import { generatePortfolioHtml } from "../services/aiService.js";
+import { buildPrompt } from "../services/promptService.js";
+import { generateDeveloperInsights } from "../services/aiService.js";
+import { renderPortfolioHtml } from "../services/templateService.js";
 import Portfolio from "../models/Portfolio.js";
 
 
@@ -34,74 +34,73 @@ export async function generatePortfolio(req, res) {
   try {
     console.log(`\n--- Starting Portfolio Generation for "${trimmedUsername}" [Theme: ${selectedTheme}] ---`);
 
+    // Check if we have the AI generated insights and GitHub data in the request body or in MongoDB
+    let aiHeadline = req.body.aiHeadline;
+    let aiAboutMe = req.body.aiAboutMe;
+    let aiCoreStrengths = req.body.aiCoreStrengths;
+    let aiGrowthPaths = req.body.aiGrowthPaths;
+    let aiCareerPath = req.body.aiCareerPath;
+    let githubData = req.body.githubData;
+
     const existingPortfolio = await Portfolio.findOne({ githubUsername: new RegExp(`^${trimmedUsername}$`, 'i') });
-    if (existingPortfolio && existingPortfolio.generatedThemes && existingPortfolio.generatedThemes.get(selectedTheme)) {
-      const reqSkills = Array.isArray(selectedSkills) ? selectedSkills : (selectedSkills ? selectedSkills.split(",") : []);
-      const skillsMatch = Array.isArray(existingPortfolio.selectedSkills)
-        ? reqSkills.length === existingPortfolio.selectedSkills.length && reqSkills.every(s => existingPortfolio.selectedSkills.includes(s))
-        : true;
 
-      const fieldsMatch =
-        (!name || name.trim() === existingPortfolio.name) &&
-        (!title || title.trim() === existingPortfolio.title) &&
-        (!email || email.trim() === existingPortfolio.email) &&
-        (!location || location.trim() === existingPortfolio.location) &&
-        (!aboutMe || aboutMe.trim() === existingPortfolio.aboutMe) &&
-        skillsMatch;
-
-      if (fieldsMatch) {
-        console.log(`[Cache Hit] Returning pre-generated theme: ${selectedTheme} for ${trimmedUsername}`);
-        return res.status(200).json({
-          success: true,
-          metadata: {
-            username: trimmedUsername,
-            theme: selectedTheme,
-            generatedAt: new Date().toISOString(),
-            cached: true
-          },
-          githubData: {
-            avatarUrl: existingPortfolio.avatarUrl,
-            blog: existingPortfolio.blog || "",
-            followers: existingPortfolio.followers || 0,
-            publicRepos: existingPortfolio.publicRepos || 0,
-            activityLevel: existingPortfolio.activityLevel || "Active",
-            topRepositories: existingPortfolio.topRepositories || []
-          },
-          portfolioHtml: existingPortfolio.generatedThemes.get(selectedTheme)
-        });
-      }
+    // Fallback to database cache if body is missing the data
+    if (!aiHeadline && existingPortfolio && existingPortfolio.aiHeadline) {
+      console.log(`[DB Cache Hit] Retrieving AI recruiter insights for ${trimmedUsername} from DB`);
+      aiHeadline = existingPortfolio.aiHeadline;
+      aiAboutMe = existingPortfolio.aiAboutMe;
+      aiCoreStrengths = existingPortfolio.aiCoreStrengths;
+      aiGrowthPaths = existingPortfolio.aiGrowthPaths;
+      aiCareerPath = existingPortfolio.aiCareerPath;
     }
 
-    let existingHtml = "";
-    if (existingPortfolio) {
-      if (existingPortfolio.portfolioHtml) {
-        existingHtml = existingPortfolio.portfolioHtml;
-      } else if (existingPortfolio.generatedThemes && existingPortfolio.generatedThemes.size > 0) {
-        const values = Array.from(existingPortfolio.generatedThemes.values());
-        if (values.length > 0) {
-          existingHtml = values[0];
-        }
-      }
-    }
-
-    let portfolioHtml;
-    let githubData;
-
-    if (existingHtml) {
-      console.log(`[Theme Switch Optimization] Transforming existing HTML style for theme: ${selectedTheme}`);
-      const prompt = buildThemeSwitchPrompt(existingHtml, selectedTheme);
-      portfolioHtml = await generatePortfolioHtml(prompt);
-
+    if (!githubData && existingPortfolio && existingPortfolio.avatarUrl) {
+      console.log(`[DB Cache Hit] Retrieving GitHub user statistics for ${trimmedUsername} from DB`);
       githubData = {
-        avatarUrl: existingPortfolio.avatarUrl || "",
+        avatarUrl: existingPortfolio.avatarUrl,
         blog: existingPortfolio.blog || "",
         followers: existingPortfolio.followers || 0,
         publicRepos: existingPortfolio.publicRepos || 0,
         activityLevel: existingPortfolio.activityLevel || "Active",
         topRepositories: existingPortfolio.topRepositories || []
       };
+    }
+
+    let portfolioHtml;
+
+    // If we have both AI insights and GitHub data, render the template instantly
+    if (aiHeadline && githubData) {
+      console.log(`[Template Engine] Rendering portfolio HTML instantly for theme: ${selectedTheme}`);
+      
+      const renderData = {
+        theme: selectedTheme,
+        name: name || existingPortfolio?.name || trimmedUsername,
+        title: title || existingPortfolio?.title || "Software Engineer",
+        email: email || existingPortfolio?.email || "",
+        location: location || existingPortfolio?.location || "Remote / Global",
+        aboutMe: aboutMe || existingPortfolio?.aboutMe || "",
+        selectedSkills: Array.isArray(selectedSkills) 
+          ? selectedSkills 
+          : (selectedSkills ? selectedSkills.split(",") : (existingPortfolio?.selectedSkills || [])),
+        githubUsername: trimmedUsername,
+        avatarUrl: githubData.avatarUrl,
+        blog: githubData.blog,
+        followers: githubData.followers,
+        publicRepos: githubData.publicRepos,
+        activityLevel: githubData.activityLevel,
+        topRepositories: githubData.topRepositories,
+        aiHeadline,
+        aiAboutMe,
+        aiCoreStrengths,
+        aiGrowthPaths,
+        aiCareerPath
+      };
+
+      portfolioHtml = renderPortfolioHtml(renderData);
     } else {
-      console.log(`[Cache Miss] Fetching GitHub data from GitHub API for ${trimmedUsername}`);
+      // Cache Miss: We need to fetch GitHub data and call the AI for the JSON insights
+      console.log(`[Cache Miss] Querying GitHub API and AI for new developer insights: ${trimmedUsername}`);
+      
       const profile = await getUser(trimmedUsername);
       const repos = await getRepositories(trimmedUsername);
 
@@ -115,6 +114,10 @@ export async function generatePortfolio(req, res) {
       const statistics = await getStatistics(trimmedUsername, repos);
       const analysis = analyzeDeveloperProfile(repos, statistics.languageStats);
 
+      const parsedSkills = Array.isArray(selectedSkills)
+        ? selectedSkills
+        : (selectedSkills ? selectedSkills.split(",") : []);
+
       const userData = {
         github: trimmedUsername,
         name: name || profile.name || profile.login,
@@ -122,11 +125,17 @@ export async function generatePortfolio(req, res) {
         email: email || "",
         location: location || profile.location || "",
         aboutMe: aboutMe || profile.bio || "",
-        selectedSkills: Array.isArray(selectedSkills) ? selectedSkills : (selectedSkills ? selectedSkills.split(",") : [])
+        selectedSkills: parsedSkills
       };
 
-      const prompt = buildPrompt(profile, analysis, selectedTheme, userData);
-      portfolioHtml = await generatePortfolioHtml(prompt);
+      const prompt = buildPrompt(profile, analysis, userData);
+      const aiInsights = await generateDeveloperInsights(prompt);
+
+      aiHeadline = aiInsights.headline;
+      aiAboutMe = aiInsights.aboutMe;
+      aiCoreStrengths = aiInsights.coreStrengths;
+      aiGrowthPaths = aiInsights.growthPaths;
+      aiCareerPath = aiInsights.careerPath;
 
       githubData = {
         avatarUrl: profile.avatar_url,
@@ -136,14 +145,37 @@ export async function generatePortfolio(req, res) {
         activityLevel: analysis.activityLevel || "Active",
         topRepositories: analysis.topRepositories || []
       };
+
+      const renderData = {
+        theme: selectedTheme,
+        name: userData.name,
+        title: userData.title,
+        email: userData.email,
+        location: userData.location,
+        aboutMe: userData.aboutMe,
+        selectedSkills: userData.selectedSkills,
+        githubUsername: trimmedUsername,
+        avatarUrl: githubData.avatarUrl,
+        blog: githubData.blog,
+        followers: githubData.followers,
+        publicRepos: githubData.publicRepos,
+        activityLevel: githubData.activityLevel,
+        topRepositories: githubData.topRepositories,
+        aiHeadline,
+        aiAboutMe,
+        aiCoreStrengths,
+        aiGrowthPaths,
+        aiCareerPath
+      };
+
+      portfolioHtml = renderPortfolioHtml(renderData);
     }
 
-    fs.writeFileSync("portfolio.html", portfolioHtml);
-    console.log(`✅ HTML saved to portfolio.html`);
+
 
     console.log(`--- Portfolio Generation Completed for "${trimmedUsername}" ---\n`);
 
-    // Response: { success, metadata, githubData, portfolioHtml }
+    // Response: { success, metadata, githubData, aiData, portfolioHtml }
     return res.status(200).json({
       success: true,
       metadata: {
@@ -152,6 +184,13 @@ export async function generatePortfolio(req, res) {
         generatedAt: new Date().toISOString()
       },
       githubData,
+      aiData: {
+        aiHeadline,
+        aiAboutMe,
+        aiCoreStrengths,
+        aiGrowthPaths,
+        aiCareerPath
+      },
       portfolioHtml
     });
 
@@ -184,7 +223,8 @@ export async function savePortfolio(req, res) {
       aboutMe,
       selectedSkills,
       portfolioHtml,
-      githubData
+      githubData,
+      aiData
     } = req.body;
 
     if (!githubUsername || typeof githubUsername !== "string" || githubUsername.trim() === "") {
@@ -221,7 +261,13 @@ export async function savePortfolio(req, res) {
       followers: githubData?.followers || existing?.followers || 0,
       publicRepos: githubData?.publicRepos || existing?.publicRepos || 0,
       activityLevel: githubData?.activityLevel || existing?.activityLevel || "Active",
-      topRepositories: githubData?.topRepositories || existing?.topRepositories || []
+      topRepositories: githubData?.topRepositories || existing?.topRepositories || [],
+
+      aiHeadline: aiData?.aiHeadline || existing?.aiHeadline || "",
+      aiAboutMe: aiData?.aiAboutMe || existing?.aiAboutMe || "",
+      aiCoreStrengths: aiData?.aiCoreStrengths || existing?.aiCoreStrengths || [],
+      aiGrowthPaths: aiData?.aiGrowthPaths || existing?.aiGrowthPaths || [],
+      aiCareerPath: aiData?.aiCareerPath || existing?.aiCareerPath || ""
     };
 
     let generatedThemes = new Map();
