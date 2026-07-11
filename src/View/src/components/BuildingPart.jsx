@@ -16,6 +16,7 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
   const [error, setError] = useState(null)
   const [generatedHtml, setGeneratedHtml] = useState("")
   const [selectedTheme, setSelectedTheme] = useState("dark")
+  const [githubData, setGithubData] = useState(null)
 
   const { user } = useAuth();
   const [saveStatus, setSaveStatus] = useState("idle"); // 'idle' | 'saving' | 'saved' | 'error'
@@ -48,7 +49,8 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
           location,
           aboutMe,
           selectedSkills,
-          portfolioHtml: generatedHtml
+          portfolioHtml: generatedHtml,
+          githubData: githubData
         })
       });
 
@@ -126,6 +128,9 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
       }
 
       setGeneratedHtml(data.portfolioHtml);
+      if (data.githubData) {
+        setGithubData(data.githubData);
+      }
       setStep(5);
     } catch (err) {
       console.error(err);

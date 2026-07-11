@@ -1,7 +1,7 @@
 import fs from "fs";
 import { getUser, getRepositories, getStatistics } from "../services/githubService.js";
 import { analyzeDeveloperProfile } from "../services/analysisService.js";
-import { buildPrompt } from "../services/promptService.js";
+import { buildPrompt, buildThemeSwitchPrompt } from "../services/promptService.js";
 import { generatePortfolioHtml } from "../services/aiService.js";
 import Portfolio from "../models/Portfolio.js";
 
@@ -25,8 +25,8 @@ export async function generatePortfolio(req, res) {
   }
 
   const allowedThemes = ["dark", "minimal", "cyberpunk", "glassmorphism"];
-  const selectedTheme = allowedThemes.includes((theme || "").toLowerCase().trim()) 
-    ? theme.toLowerCase().trim() 
+  const selectedTheme = allowedThemes.includes((theme || "").toLowerCase().trim())
+    ? theme.toLowerCase().trim()
     : "dark";
 
   const trimmedUsername = githubUsername.trim();
@@ -34,7 +34,6 @@ export async function generatePortfolio(req, res) {
   try {
     console.log(`\n--- Starting Portfolio Generation for "${trimmedUsername}" [Theme: ${selectedTheme}] ---`);
 
-    // Cache Check: Check if theme already exists in database and inputs match
     const existingPortfolio = await Portfolio.findOne({ githubUsername: new RegExp(`^${trimmedUsername}$`, 'i') });
     if (existingPortfolio && existingPortfolio.generatedThemes && existingPortfolio.generatedThemes.get(selectedTheme)) {
       const reqSkills = Array.isArray(selectedSkills) ? selectedSkills : (selectedSkills ? selectedSkills.split(",") : []);
@@ -60,44 +59,91 @@ export async function generatePortfolio(req, res) {
             generatedAt: new Date().toISOString(),
             cached: true
           },
+          githubData: {
+            avatarUrl: existingPortfolio.avatarUrl,
+            blog: existingPortfolio.blog || "",
+            followers: existingPortfolio.followers || 0,
+            publicRepos: existingPortfolio.publicRepos || 0,
+            activityLevel: existingPortfolio.activityLevel || "Active",
+            topRepositories: existingPortfolio.topRepositories || []
+          },
           portfolioHtml: existingPortfolio.generatedThemes.get(selectedTheme)
         });
       }
     }
 
-    const profile = await getUser(trimmedUsername);
-    const repos = await getRepositories(trimmedUsername);
-
-    if (!repos || repos.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: `GitHub user "${trimmedUsername}" has no public repositories.`
-      });
+    let existingHtml = "";
+    if (existingPortfolio) {
+      if (existingPortfolio.portfolioHtml) {
+        existingHtml = existingPortfolio.portfolioHtml;
+      } else if (existingPortfolio.generatedThemes && existingPortfolio.generatedThemes.size > 0) {
+        const values = Array.from(existingPortfolio.generatedThemes.values());
+        if (values.length > 0) {
+          existingHtml = values[0];
+        }
+      }
     }
 
-    const statistics = await getStatistics(trimmedUsername, repos);
-    const analysis = analyzeDeveloperProfile(repos, statistics.languageStats);
+    let portfolioHtml;
+    let githubData;
 
-    const userData = {
-      github: trimmedUsername,
-      name: name || profile.name || profile.login,
-      title: title || analysis.mainStack,
-      email: email || "",
-      location: location || profile.location || "",
-      aboutMe: aboutMe || profile.bio || "",
-      selectedSkills: Array.isArray(selectedSkills) ? selectedSkills : (selectedSkills ? selectedSkills.split(",") : [])
-    };
+    if (existingHtml) {
+      console.log(`[Theme Switch Optimization] Transforming existing HTML style for theme: ${selectedTheme}`);
+      const prompt = buildThemeSwitchPrompt(existingHtml, selectedTheme);
+      portfolioHtml = await generatePortfolioHtml(prompt);
 
-    const prompt = buildPrompt(profile, analysis, selectedTheme, userData);
-    const portfolioHtml = await generatePortfolioHtml(prompt);
+      githubData = {
+        avatarUrl: existingPortfolio.avatarUrl || "",
+        blog: existingPortfolio.blog || "",
+        followers: existingPortfolio.followers || 0,
+        publicRepos: existingPortfolio.publicRepos || 0,
+        activityLevel: existingPortfolio.activityLevel || "Active",
+        topRepositories: existingPortfolio.topRepositories || []
+      };
+    } else {
+      console.log(`[Cache Miss] Fetching GitHub data from GitHub API for ${trimmedUsername}`);
+      const profile = await getUser(trimmedUsername);
+      const repos = await getRepositories(trimmedUsername);
 
-    // Save HTML to file for preview
+      if (!repos || repos.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: `GitHub user "${trimmedUsername}" has no public repositories.`
+        });
+      }
+
+      const statistics = await getStatistics(trimmedUsername, repos);
+      const analysis = analyzeDeveloperProfile(repos, statistics.languageStats);
+
+      const userData = {
+        github: trimmedUsername,
+        name: name || profile.name || profile.login,
+        title: title || analysis.mainStack,
+        email: email || "",
+        location: location || profile.location || "",
+        aboutMe: aboutMe || profile.bio || "",
+        selectedSkills: Array.isArray(selectedSkills) ? selectedSkills : (selectedSkills ? selectedSkills.split(",") : [])
+      };
+
+      const prompt = buildPrompt(profile, analysis, selectedTheme, userData);
+      portfolioHtml = await generatePortfolioHtml(prompt);
+
+      githubData = {
+        avatarUrl: profile.avatar_url,
+        blog: profile.blog || "",
+        followers: profile.followers || 0,
+        publicRepos: profile.public_repos || 0,
+        activityLevel: analysis.activityLevel || "Active",
+        topRepositories: analysis.topRepositories || []
+      };
+    }
+
     fs.writeFileSync("portfolio.html", portfolioHtml);
     console.log(`✅ HTML saved to portfolio.html`);
 
     console.log(`--- Portfolio Generation Completed for "${trimmedUsername}" ---\n`);
 
-    // Response: { success, metadata, portfolioHtml }
+    // Response: { success, metadata, githubData, portfolioHtml }
     return res.status(200).json({
       success: true,
       metadata: {
@@ -105,6 +151,7 @@ export async function generatePortfolio(req, res) {
         theme: selectedTheme,
         generatedAt: new Date().toISOString()
       },
+      githubData,
       portfolioHtml
     });
 
@@ -125,11 +172,6 @@ export async function generatePortfolio(req, res) {
   }
 }
 
-/**
- * @desc    Save or update a generated portfolio
- * @route   POST /api/portfolio/save
- * @access  Private
- */
 export async function savePortfolio(req, res) {
   try {
     const {
@@ -141,10 +183,10 @@ export async function savePortfolio(req, res) {
       location,
       aboutMe,
       selectedSkills,
-      portfolioHtml
+      portfolioHtml,
+      githubData
     } = req.body;
 
-    // 1. Validate required fields
     if (!githubUsername || typeof githubUsername !== "string" || githubUsername.trim() === "") {
       return res.status(400).json({ success: false, message: "githubUsername is required and must be a string." });
     }
@@ -160,7 +202,8 @@ export async function savePortfolio(req, res) {
       return res.status(400).json({ success: false, message: `${theme} is not a valid theme.` });
     }
 
-    // 2. Build the portfolio data
+    const existing = await Portfolio.findOne({ userId: req.user._id, githubUsername: githubUsername.trim() });
+
     const portfolioData = {
       userId: req.user._id,
       githubUsername: githubUsername.trim(),
@@ -171,15 +214,18 @@ export async function savePortfolio(req, res) {
       location: typeof location === "string" ? location.trim() : "",
       aboutMe: typeof aboutMe === "string" ? aboutMe.trim() : "",
       selectedSkills: Array.isArray(selectedSkills) ? selectedSkills.map(s => String(s).trim()) : [],
-      portfolioHtml: portfolioHtml
+      portfolioHtml: portfolioHtml,
+
+      avatarUrl: githubData?.avatarUrl || existing?.avatarUrl || "",
+      blog: githubData?.blog || existing?.blog || "",
+      followers: githubData?.followers || existing?.followers || 0,
+      publicRepos: githubData?.publicRepos || existing?.publicRepos || 0,
+      activityLevel: githubData?.activityLevel || existing?.activityLevel || "Active",
+      topRepositories: githubData?.topRepositories || existing?.topRepositories || []
     };
 
-    // 3. Upsert: if a portfolio with same githubUsername and userId exists, update it. Otherwise, create.
-    const existing = await Portfolio.findOne({ userId: req.user._id, githubUsername: portfolioData.githubUsername });
-    
     let generatedThemes = new Map();
     if (existing) {
-      // Invalidate cache if inputs modified
       const skillsMatch = Array.isArray(portfolioData.selectedSkills) && Array.isArray(existing.selectedSkills)
         ? portfolioData.selectedSkills.length === existing.selectedSkills.length && portfolioData.selectedSkills.every(s => existing.selectedSkills.includes(s))
         : false;
@@ -196,7 +242,7 @@ export async function savePortfolio(req, res) {
         generatedThemes = existing.generatedThemes;
       }
     }
-    
+
     generatedThemes.set(portfolioData.theme, portfolioData.portfolioHtml);
     portfolioData.generatedThemes = generatedThemes;
 
@@ -220,11 +266,6 @@ export async function savePortfolio(req, res) {
   }
 }
 
-/**
- * @desc    Get all portfolios saved by current user
- * @route   GET /api/portfolio/my-portfolios
- * @access  Private
- */
 export async function getMyPortfolios(req, res) {
   try {
     const portfolios = await Portfolio.find({ userId: req.user._id }).sort({ updatedAt: -1 });
@@ -241,11 +282,6 @@ export async function getMyPortfolios(req, res) {
   }
 }
 
-/**
- * @desc    Delete a saved portfolio
- * @route   DELETE /api/portfolio/:id
- * @access  Private
- */
 export async function deletePortfolio(req, res) {
   try {
     const portfolioId = req.params.id;
@@ -258,7 +294,6 @@ export async function deletePortfolio(req, res) {
       });
     }
 
-    // Ensure the portfolio belongs to the authenticated user
     if (portfolio.userId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
@@ -281,16 +316,11 @@ export async function deletePortfolio(req, res) {
   }
 }
 
-/**
- * @desc    Get a single portfolio by ID (Public)
- * @route   GET /api/portfolio/:id
- * @access  Public
- */
+
 export async function getPortfolioById(req, res) {
   try {
     const portfolioId = req.params.id;
 
-    // Check if valid ObjectId format to prevent Mongoose cast error crashes
     if (!portfolioId.match(/^[0-9a-fA-F]{24}$/)) {
       return res.status(400).json({
         success: false,

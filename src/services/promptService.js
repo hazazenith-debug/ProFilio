@@ -119,3 +119,37 @@ CRITICAL CODE CONSTRAINTS:
 `;
 }
 
+export function buildThemeSwitchPrompt(existingHtml, themeName) {
+  const theme = getThemeConfig(themeName);
+
+  return `
+You are an expert web designer and UI/UX developer.
+Your task is to restyle the following portfolio HTML to match the requested Theme: "${themeName.toUpperCase()}".
+
+Here is the theme design configuration:
+- Core Typography: Load ${theme.googleFontUrl} and set Font Family to: ${theme.fontFamily}
+- Base Colors:
+  * Background: ${theme.colors.background}
+  * Text: ${theme.colors.text}
+  * Secondary Text: ${theme.colors.secondaryText}
+  * Accent: ${theme.colors.primaryAccent}
+  * Supporting Accent: ${theme.colors.secondaryAccent}
+  * Card Background: ${theme.colors.cardBackground}
+  * Card Border: ${theme.colors.borderColor}
+- Custom Theme Styles:
+${theme.styles}
+
+INSTRUCTIONS:
+1. Replace all CSS styles in the <style> tag to fully implement the styling and design rules of the "${themeName}" theme.
+2. Update the HTML layout, wrapper classes, cards, badges, buttons, and inline styles to match the look and feel of the new theme (e.g. use clean cards for minimal, glowing neon elements for cyberpunk, glassmorphic blur filters for glassmorphism).
+3. ABSOLUTELY DO NOT change, omit, or modify any of the text content, biography paragraphs, recruiter review sections, project names, descriptions, languages, github urls, names, or contact links from the input HTML. Keep all content completely unchanged.
+4. Keep the HTML response clean, compact, and optimized.
+5. Return ONLY the raw valid HTML output starting with <!DOCTYPE html> and ending with </html>. Do not wrap in markdown code blocks.
+
+Input HTML:
+=========================================
+${existingHtml}
+=========================================
+`;
+}
+
