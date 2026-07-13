@@ -4,6 +4,7 @@ import { Skills } from './Skills'
 import { AboutMe } from './AboutMe'
 import { Preview } from './Preview'
 import { ThemeSelection } from './ThemeSelection'
+import { PreviewToolbar } from './PreviewToolbar'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -277,99 +278,21 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
 
         {step === 5 && (
           <div className="full-screen-preview">
-            <div className="preview-topbar">
-              <div className="preview-logo">
-                ⚡ ProFilio <span>| Live Preview</span>
-              </div>
-              
-              <div className="preview-controls">
-                <div className="theme-selector-wrapper">
-                  <label htmlFor="theme-select">Theme:</label>
-                  <select 
-                    id="theme-select"
-                    className="theme-dropdown"
-                    value={selectedTheme}
-                    onChange={(e) => {
-                      const newTheme = e.target.value;
-                      setSelectedTheme(newTheme);
-                      handleGenerate(newTheme);
-                    }}
-                    disabled={isLoading}
-                  >
-                    <option value="dark">Dark Slate & Neon Accent</option>
-                    <option value="minimal">Scandinavian Monochromatic</option>
-                    <option value="cyberpunk">Neon Cybernetic Tech</option>
-                    <option value="glassmorphism">Frosted Glass Fluidity</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="preview-actions" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                {saveError && (
-                  <span style={{ color: "#ef4444", fontSize: "12px", background: "#fef2f2", padding: "6px 12px", borderRadius: "8px", border: "1px solid #fee2e2" }}>
-                    ⚠️ {saveError}
-                  </span>
-                )}
-                {user ? (
-                  <button 
-                    onClick={handleSave} 
-                    className="btn-preview-save"
-                    style={{
-                      background: saveStatus === "saved" ? "#10b981" : saveStatus === "saving" ? "#f59e0b" : "linear-gradient(135deg, #4f7cff, #8b3dff)",
-                      color: "white",
-                      border: "none",
-                      padding: "8px 16px",
-                      borderRadius: "10px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      transition: "all 0.3s ease",
-                      boxShadow: saveStatus === "saved" ? "0 4px 12px rgba(16, 185, 129, 0.2)" : "0 4px 12px rgba(139, 61, 255, 0.25)"
-                    }}
-                    disabled={isLoading || saveStatus === "saving"}
-                  >
-                    {saveStatus === "saving" ? "⏳ Saving..." : saveStatus === "saved" ? "✅ Saved!" : "☁️ Save to Profile"}
-                  </button>
-                ) : (
-                  <Link 
-                    to="/signin" 
-                    className="btn-preview-save"
-                    style={{
-                      background: "rgba(255, 255, 255, 0.15)",
-                      color: "white",
-                      textDecoration: "none",
-                      padding: "8px 16px",
-                      borderRadius: "10px",
-                      fontWeight: 600,
-                      fontSize: "14px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      transition: "background 0.3s ease"
-                    }}
-                  >
-                    🔒 Sign In to Save
-                  </Link>
-                )}
-                <button 
-                  onClick={handleDownload} 
-                  className="btn-preview-download"
-                  disabled={isLoading}
-                >
-                  📥 Download HTML
-                </button>
-                <button 
-                  onClick={() => { setError(null); setStep(4); }} 
-                  className="btn-preview-back"
-                  disabled={isLoading}
-                >
-                  ✏️ Back to Editor
-                </button>
-              </div>
-            </div>
+            <PreviewToolbar
+              mode="builder"
+              selectedTheme={selectedTheme}
+              onThemeChange={(newTheme) => {
+                setSelectedTheme(newTheme);
+                handleGenerate(newTheme);
+              }}
+              onDownload={handleDownload}
+              isLoading={isLoading}
+              user={user}
+              saveStatus={saveStatus}
+              saveError={saveError}
+              onSave={handleSave}
+              onBackToEditor={() => { setError(null); setStep(4); }}
+            />
 
             <div className="preview-iframe-wrapper">
               {isLoading && (

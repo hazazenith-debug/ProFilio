@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Download, Sparkles, RefreshCw } from "lucide-react";
+import { PreviewToolbar } from "./PreviewToolbar";
 
 export function PortfolioViewer() {
   const { id } = useParams();
@@ -201,126 +202,15 @@ export function PortfolioViewer() {
 
   return (
     <div style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: "Inter, system-ui, sans-serif" }}>
-      {/* Custom Preview Toolbar */}
-      <div style={{
-        height: "64px",
-        background: "#ffffff",
-        borderBottom: "1px solid #e2e8f0",
-        padding: "0 20px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        zIndex: 100,
-        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)"
-      }}>
-        {/* Left Side */}
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <Link to="/dashboard" style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            color: "#475569",
-            textDecoration: "none",
-            fontSize: "14px",
-            fontWeight: "600",
-            padding: "8px 12px",
-            borderRadius: "8px",
-            transition: "background 0.2s",
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.background = "#f1f5f9"}
-          onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-          >
-            <ArrowLeft size={16} /> Dashboard
-          </Link>
-          <div style={{ height: "20px", width: "1px", background: "#e2e8f0" }}></div>
-          <span style={{ fontWeight: 700, color: "#0f172a", display: "flex", alignItems: "center", gap: "6px" }}>
-            <Sparkles size={16} style={{ color: "#3b82f6" }} /> 
-            Preview: <span style={{ color: "#64748b", fontWeight: 500 }}>@{portfolio.githubUsername}</span>
-          </span>
-        </div>
-
-        {/* Center - Theme Selection */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <label htmlFor="viewer-theme-select" style={{ fontSize: "13px", fontWeight: 600, color: "#475569" }}>Theme:</label>
-          <select
-            id="viewer-theme-select"
-            value={selectedTheme}
-            onChange={(e) => handleThemeChange(e.target.value)}
-            disabled={regenerating}
-            style={{
-              padding: "6px 12px",
-              borderRadius: "8px",
-              border: "1px solid #cbd5e1",
-              background: "#ffffff",
-              color: "#0f172a",
-              fontWeight: 600,
-              fontSize: "13px",
-              cursor: "pointer",
-              outline: "none"
-            }}
-          >
-            <option value="dark">Dark Slate & Neon Accent</option>
-            <option value="minimal">Scandinavian Monochromatic</option>
-            <option value="cyberpunk">Neon Cybernetic Tech</option>
-            <option value="glassmorphism">Frosted Glass Fluidity</option>
-          </select>
-
-          {/* Sync Status Badge */}
-          <span style={{
-            fontSize: "12px",
-            fontWeight: 500,
-            padding: "4px 10px",
-            borderRadius: "9999px",
-            background: saveStatus === "saving" ? "#fef3c7" : saveStatus === "saved" ? "#dcfce7" : saveStatus === "error" ? "#fee2e2" : "#f1f5f9",
-            color: saveStatus === "saving" ? "#d97706" : saveStatus === "saved" ? "#15803d" : saveStatus === "error" ? "#b91c1c" : "#475569",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "4px"
-          }}>
-            {saveStatus === "saving" && (
-              <>
-                <RefreshCw size={12} className="spin-icon" style={{ animation: "spin 1.5s linear infinite" }} />
-                Regenerating & Saving...
-              </>
-            )}
-            {saveStatus === "saved" && "✅ Saved to Cloud"}
-            {saveStatus === "local" && "👁️ Temporary View"}
-            {saveStatus === "error" && "⚠️ Sync Failed"}
-          </span>
-          <style>{`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}</style>
-        </div>
-
-        {/* Right Side */}
-        <div>
-          <button
-            onClick={handleDownload}
-            disabled={regenerating}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              background: "#0f172a",
-              color: "#ffffff",
-              border: "none",
-              padding: "8px 16px",
-              borderRadius: "10px",
-              fontWeight: "600",
-              fontSize: "13px",
-              cursor: "pointer",
-              transition: "background 0.2s"
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = "#1f2937"}
-            onMouseLeave={(e) => e.currentTarget.style.background = "#0f172a"}
-          >
-            <Download size={15} /> Download HTML
-          </button>
-        </div>
-      </div>
+      <PreviewToolbar
+        mode="viewer"
+        username={portfolio.githubUsername}
+        selectedTheme={selectedTheme}
+        onThemeChange={(newTheme) => handleThemeChange(newTheme)}
+        onDownload={handleDownload}
+        isLoading={regenerating}
+        viewerSaveStatus={saveStatus}
+      />
 
       {/* Embedded Iframe View */}
       <div style={{ flexGrow: 1, position: "relative", width: "100%", background: "#f8fafc" }}>
