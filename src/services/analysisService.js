@@ -12,7 +12,7 @@ const KEYWORDS = {
   devops: ["docker", "kubernetes", "ci/cd", "pipeline", "aws", "azure", "gcp", "jenkins", "actions", "deploy", "nginx", "terraform", "ansible", "heroku", "vercel", "github-actions"]
 };
 
-export function analyzeDeveloperProfile(repos, languageStats) {
+export function analyzeDeveloperProfile(repos, languageStats, selectedSkills) {
   let scores = {
     frontend: 15,
     backend: 15,
@@ -21,6 +21,41 @@ export function analyzeDeveloperProfile(repos, languageStats) {
   };
 
   const detectedTech = new Set();
+
+  // Analyze selected skills to boost category scores and ensure they are in detectedTech
+  (selectedSkills || []).forEach(skill => {
+    const skillLower = skill.toLowerCase().trim();
+    let matched = false;
+
+    for (const [category, languages] of Object.entries(LANGUAGE_CATEGORIES)) {
+      if (languages.includes(skillLower)) {
+        scores[category] += 15;
+        detectedTech.add(skill);
+        matched = true;
+      }
+    }
+
+    for (const [category, keywords] of Object.entries(KEYWORDS)) {
+      if (keywords.includes(skillLower) || skillLower.includes(category)) {
+        scores[category] += 15;
+        detectedTech.add(skill);
+        matched = true;
+      }
+    }
+
+    if (!matched) {
+      if (skillLower.includes("sql") || skillLower.includes("db") || skillLower.includes("graph") || skillLower.includes("cache") || skillLower.includes("store")) {
+        scores.database += 15;
+      } else if (skillLower.includes("css") || skillLower.includes("style") || skillLower.includes("design") || skillLower.includes("web") || skillLower.includes("js") || skillLower.includes("ts") || skillLower.includes("react") || skillLower.includes("vue") || skillLower.includes("nuxt") || skillLower.includes("next")) {
+        scores.frontend += 15;
+      } else if (skillLower.includes("api") || skillLower.includes("server") || skillLower.includes("rest") || skillLower.includes("django") || skillLower.includes("spring") || skillLower.includes("nest") || skillLower.includes("koa") || skillLower.includes("fastapi")) {
+        scores.backend += 15;
+      } else if (skillLower.includes("docker") || skillLower.includes("kube") || skillLower.includes("ci") || skillLower.includes("cd") || skillLower.includes("aws") || skillLower.includes("cloud") || skillLower.includes("deploy") || skillLower.includes("nginx") || skillLower.includes("pipeline")) {
+        scores.devops += 15;
+      }
+      detectedTech.add(skill);
+    }
+  });
 
   repos.forEach(repo => {
     const primaryLang = (repo.language || "").toLowerCase().trim();
@@ -129,12 +164,64 @@ export function analyzeDeveloperProfile(repos, languageStats) {
       topics: repo.topics || []
     }));
 
+  const skillLevels = calculateSkillLevels(selectedSkills, repos, languageStats);
+
   return {
     scores,
     mostUsedLanguages: sortedLanguages,
     detectedTechnologies: [...detectedTech].slice(0, 12),
     mainStack,
     activityLevel,
-    topRepositories
+    topRepositories,
+    skillLevels
   };
+}
+
+export function calculateSkillLevels(selectedSkills, repos, languageStats) {
+  const repoList = Array.isArray(repos) ? repos : [];
+  const stats = languageStats || {};
+
+  return (selectedSkills || []).map(skill => {
+    const skillLower = skill.toLowerCase().trim();
+    let score = 70; // Base score
+
+    // Check if skill matches repository primary language
+    const primaryLangRepos = repoList.filter(r => (r.language || "").toLowerCase().trim() === skillLower);
+    const repoCount = primaryLangRepos.length;
+
+    // Check mentions in name, description, or topics
+    const mentions = repoList.filter(r => {
+      const name = (r.name || "").toLowerCase();
+      const desc = (r.description || "").toLowerCase();
+      const topics = Array.isArray(r.topics) ? r.topics.map(t => String(t).toLowerCase()) : [];
+      return name.includes(skillLower) || desc.includes(skillLower) || topics.includes(skillLower);
+    });
+    const mentionCount = mentions.length;
+
+    // Check languageStats bytes
+    let langBytes = 0;
+    for (const [lang, bytes] of Object.entries(stats)) {
+      if (lang.toLowerCase().trim() === skillLower) {
+        langBytes = bytes;
+        break;
+      }
+    }
+
+    if (langBytes > 0) {
+      score += 10;
+      if (langBytes > 100000) score += 10;
+      else if (langBytes > 20000) score += 5;
+    }
+
+    score += repoCount * 8;
+    score += mentionCount * 4;
+
+    // Cap the score realistically
+    score = Math.min(Math.max(score, 60), 98);
+
+    return {
+      name: skill,
+      level: score
+    };
+  });
 }

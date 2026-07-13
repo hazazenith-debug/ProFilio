@@ -10,6 +10,16 @@ export function buildPrompt(profile, analysis, userData) {
     topRepositories: analysis.topRepositories || []
   };
 
+  const skillLevelsList = (analysis.skillLevels || []).map(sk => `${sk.name} (Strength Score: ${sk.level}/100)`).join(", ");
+  const skillsDisplay = skillLevelsList || developerData.selectedSkills.join(", ");
+
+  const domainScoresText = `
+- Frontend Engineering: ${analysis.scores?.frontend || 15}/100
+- Backend Engineering: ${analysis.scores?.backend || 15}/100
+- Database & Storage: ${analysis.scores?.database || 15}/100
+- DevOps & Cloud: ${analysis.scores?.devops || 15}/100
+`;
+
   return `
 You are a world-class "Senior Technical Recruiter".
 Your task is to analyze the developer's profile details and write engaging, recruiters-eye narrative reviews and professional highlights.
@@ -38,7 +48,13 @@ GitHub Username: ${developerData.username}
 Location: ${developerData.location}
 About Me / Bio: "${developerData.aboutMe}"
 Professional Title: ${developerData.title}
-Selected Skills & Technologies: ${developerData.selectedSkills.join(", ")}
+Selected Skills & Technologies (with analyzed strength scores): ${skillsDisplay}
+
+Recruiter Git Analysis Metrics:
+- Calculated Developer Focus: ${analysis.mainStack}
+- Activity Level: ${analysis.activityLevel}
+- Prominent Languages: ${analysis.mostUsedLanguages?.join(", ") || "None"}
+- Domain Strength Analysis: ${domainScoresText}
 
 Top Repositories:
 ${developerData.topRepositories.map((repo, i) => `

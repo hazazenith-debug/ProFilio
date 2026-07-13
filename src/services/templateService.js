@@ -22,13 +22,19 @@ function getSkillSubtitle(skill) {
 export function renderPortfolioHtml(data) {
   const theme = getThemeConfig(data.theme);
 
-  // Deterministic skill level bars (88%, 84%, 82%, etc.) to keep layout clean
+  // Use the analyzed skill levels if available; otherwise fall back to deterministic levels
   const defaultLevels = [88, 84, 82, 78, 76, 74];
-  const skillsWithLevels = (data.selectedSkills || []).map((skill, index) => ({
-    name: skill,
-    level: defaultLevels[index % defaultLevels.length],
-    subtitle: getSkillSubtitle(skill)
-  }));
+  const skillsWithLevels = (data.skillLevels && data.skillLevels.length > 0)
+    ? data.skillLevels.map(skill => ({
+        name: skill.name,
+        level: skill.level,
+        subtitle: getSkillSubtitle(skill.name)
+      }))
+    : (data.selectedSkills || []).map((skill, index) => ({
+        name: skill,
+        level: defaultLevels[index % defaultLevels.length],
+        subtitle: getSkillSubtitle(skill)
+      }));
 
   // Ensure arrays exist
   const coreStrengths = data.aiCoreStrengths || [];

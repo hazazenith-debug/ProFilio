@@ -43,6 +43,10 @@ const PortfolioSchema = new mongoose.Schema(
       type: [String],
       default: []
     },
+    skillLevels: {
+      type: [mongoose.Schema.Types.Mixed],
+      default: []
+    },
     portfolioHtml: {
       type: String,
       required: [true, "Portfolio HTML content is required"]

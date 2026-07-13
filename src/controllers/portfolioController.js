@@ -72,6 +72,22 @@ export async function generatePortfolio(req, res) {
     if (aiHeadline && githubData) {
       console.log(`[Template Engine] Rendering portfolio HTML instantly for theme: ${selectedTheme}`);
       
+      const parsedSkills = Array.isArray(selectedSkills) 
+        ? selectedSkills 
+        : (selectedSkills ? selectedSkills.split(",") : (existingPortfolio?.selectedSkills || []));
+
+      // Calculate skill levels
+      let skillLevels = existingPortfolio?.skillLevels || [];
+      const skillsMatch = Array.isArray(parsedSkills) && Array.isArray(existingPortfolio?.selectedSkills)
+        ? parsedSkills.length === existingPortfolio.selectedSkills.length && parsedSkills.every(s => existingPortfolio.selectedSkills.includes(s))
+        : false;
+
+      if (!skillsMatch || skillLevels.length === 0) {
+        // Recalculate skill levels using cached GitHub info
+        const { calculateSkillLevels } = await import("../services/analysisService.js");
+        skillLevels = calculateSkillLevels(parsedSkills, githubData.topRepositories || [], {});
+      }
+
       const renderData = {
         theme: selectedTheme,
         name: name || existingPortfolio?.name || trimmedUsername,
@@ -79,9 +95,8 @@ export async function generatePortfolio(req, res) {
         email: email || existingPortfolio?.email || "",
         location: location || existingPortfolio?.location || "Remote / Global",
         aboutMe: aboutMe || existingPortfolio?.aboutMe || "",
-        selectedSkills: Array.isArray(selectedSkills) 
-          ? selectedSkills 
-          : (selectedSkills ? selectedSkills.split(",") : (existingPortfolio?.selectedSkills || [])),
+        selectedSkills: parsedSkills,
+        skillLevels: skillLevels,
         githubUsername: trimmedUsername,
         avatarUrl: githubData.avatarUrl,
         blog: githubData.blog,
@@ -111,12 +126,12 @@ export async function generatePortfolio(req, res) {
         });
       }
 
-      const statistics = await getStatistics(trimmedUsername, repos);
-      const analysis = analyzeDeveloperProfile(repos, statistics.languageStats);
-
       const parsedSkills = Array.isArray(selectedSkills)
         ? selectedSkills
         : (selectedSkills ? selectedSkills.split(",") : []);
+
+      const statistics = await getStatistics(trimmedUsername, repos);
+      const analysis = analyzeDeveloperProfile(repos, statistics.languageStats, parsedSkills);
 
       const userData = {
         github: trimmedUsername,
@@ -154,6 +169,7 @@ export async function generatePortfolio(req, res) {
         location: userData.location,
         aboutMe: userData.aboutMe,
         selectedSkills: userData.selectedSkills,
+        skillLevels: analysis.skillLevels || [],
         githubUsername: trimmedUsername,
         avatarUrl: githubData.avatarUrl,
         blog: githubData.blog,
@@ -191,6 +207,7 @@ export async function generatePortfolio(req, res) {
         aiGrowthPaths,
         aiCareerPath
       },
+      skillLevels: (aiHeadline && githubData) ? (existingPortfolio?.skillLevels || []) : (renderData?.skillLevels || []),
       portfolioHtml
     });
 
@@ -222,6 +239,7 @@ export async function savePortfolio(req, res) {
       location,
       aboutMe,
       selectedSkills,
+      skillLevels,
       portfolioHtml,
       githubData,
       aiData
@@ -254,6 +272,7 @@ export async function savePortfolio(req, res) {
       location: typeof location === "string" ? location.trim() : "",
       aboutMe: typeof aboutMe === "string" ? aboutMe.trim() : "",
       selectedSkills: Array.isArray(selectedSkills) ? selectedSkills.map(s => String(s).trim()) : [],
+      skillLevels: Array.isArray(skillLevels) ? skillLevels : [],
       portfolioHtml: portfolioHtml,
 
       avatarUrl: githubData?.avatarUrl || existing?.avatarUrl || "",

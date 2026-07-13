@@ -18,6 +18,7 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
   const [selectedTheme, setSelectedTheme] = useState("dark")
   const [githubData, setGithubData] = useState(null)
   const [aiData, setAiData] = useState(null)
+  const [skillLevels, setSkillLevels] = useState([])
 
   const { user } = useAuth();
   const [saveStatus, setSaveStatus] = useState("idle"); // 'idle' | 'saving' | 'saved' | 'error'
@@ -50,6 +51,7 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
           location,
           aboutMe,
           selectedSkills,
+          skillLevels,
           portfolioHtml: generatedHtml,
           githubData: githubData,
           aiData: aiData
@@ -107,10 +109,12 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
     setIsLoading(true);
     setError(null);
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch("/api/portfolio/generate", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
           githubUsername: github,
@@ -135,6 +139,9 @@ export function BuildingPart({ aboutMe, setAboutMe, selectedSkills, setSelectedS
       }
       if (data.aiData) {
         setAiData(data.aiData);
+      }
+      if (data.skillLevels) {
+        setSkillLevels(data.skillLevels);
       }
       setStep(5);
     } catch (err) {

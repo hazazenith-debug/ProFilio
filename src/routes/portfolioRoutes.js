@@ -10,8 +10,8 @@ import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// POST /api/portfolio/generate (Public)
-router.post("/generate", generatePortfolio);
+// POST /api/portfolio/generate (Protected)
+router.post("/generate", protect, generatePortfolio);
 
 // Protected Portfolio Database Actions
 router.post("/save", protect, savePortfolio);
