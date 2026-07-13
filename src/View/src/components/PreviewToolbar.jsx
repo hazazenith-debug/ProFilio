@@ -52,26 +52,26 @@ export function PreviewToolbar({
               borderRadius: "8px",
               transition: "all 0.2s",
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#475569";
-              e.currentTarget.style.borderColor = "#64748b";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#334155";
-              e.currentTarget.style.borderColor = "#475569";
-            }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#475569";
+                e.currentTarget.style.borderColor = "#64748b";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#334155";
+                e.currentTarget.style.borderColor = "#475569";
+              }}
             >
               <ArrowLeft size={16} /> Dashboard
             </Link>
             <div style={{ height: "20px", width: "1px", background: "#1e293b" }}></div>
             <span style={{ fontWeight: 700, color: "#38bdf8", display: "flex", alignItems: "center", gap: "6px" }}>
-              <Sparkles size={16} /> 
+              <Sparkles size={16} />
               Preview: <span style={{ color: "#f8fafc", fontWeight: 500 }}>@{username}</span>
             </span>
           </>
         ) : (
           <div style={{ fontWeight: 850, fontSize: "18px", letterSpacing: "-0.5px", display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ background: "linear-gradient(135deg, #38bdf8 0%, #818cf8 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 800 }}>⚡ ProFilio</span>
+            <span style={{ background: "linear-gradient(135deg, #38bdf8 0%, #818cf8 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 800 }}>⚡ PortfolioGenie</span>
             <span style={{ color: "#94a3b8", fontWeight: 400, fontSize: "14px", marginLeft: "4px" }}>| Live Preview</span>
           </div>
         )}
@@ -81,7 +81,7 @@ export function PreviewToolbar({
       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <label htmlFor="toolbar-theme-select" style={{ fontSize: "14px", fontWeight: 500, color: "#94a3b8" }}>Theme:</label>
-          <select 
+          <select
             id="toolbar-theme-select"
             value={selectedTheme}
             onChange={(e) => onThemeChange(e.target.value)}
@@ -143,10 +143,10 @@ export function PreviewToolbar({
                 ⚠️ {saveError}
               </span>
             )}
-            
+
             {user ? (
-              <button 
-                onClick={onSave} 
+              <button
+                onClick={onSave}
                 disabled={isLoading || saveStatus === "saving"}
                 style={{
                   background: saveStatus === "saved" ? "#064e3b" : saveStatus === "saving" ? "#78350f" : "linear-gradient(135deg, #3b82f6, #6366f1)",
@@ -167,8 +167,8 @@ export function PreviewToolbar({
                 {saveStatus === "saving" ? "⏳ Saving..." : saveStatus === "saved" ? "✅ Saved!" : "☁️ Save to Profile"}
               </button>
             ) : (
-              <Link 
-                to="/signin" 
+              <Link
+                to="/signin"
                 style={{
                   background: "rgba(255, 255, 255, 0.1)",
                   color: "#f8fafc",
@@ -190,8 +190,8 @@ export function PreviewToolbar({
           </>
         )}
 
-        <button 
-          onClick={onDownload} 
+        <button
+          onClick={onDownload}
           disabled={isLoading}
           style={{
             display: "inline-flex",
@@ -221,8 +221,8 @@ export function PreviewToolbar({
         </button>
 
         {mode === "builder" && (
-          <button 
-            onClick={onBackToEditor} 
+          <button
+            onClick={onBackToEditor}
             disabled={isLoading}
             style={{
               display: "inline-flex",
